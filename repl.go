@@ -10,7 +10,7 @@ import (
 type cliCommand struct {
 	name string
 	description string
-	callback func() error
+	callback func(*config) error
 }
 
 func getCommands() map[string]cliCommand {
@@ -25,6 +25,16 @@ func getCommands() map[string]cliCommand {
 			description: "Exit the Pokedex",
 			callback: commandExit,
 		},
+		"map": {
+			name: "map",
+			description: "Lists the next page of location areas",
+			callback: commandMap,
+		},
+		"mapb": {
+			name: "mapb",
+			description: "Lists the prevoius page of location areas",
+			callback: commandMapB,
+		},
 	}
 }
 
@@ -34,13 +44,13 @@ func getInput(prompt string, r* bufio.Reader) (string, error) {
 	return strings.TrimSpace(strings.ToLower(input)), err
 }
 
-func startREPL() {
+func startREPL(cfg *config) {
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		cmdName, _ := getInput("pokedex > ", reader)
 		cmd, exists := getCommands()[cmdName]
 		if exists {
-			err := cmd.callback()
+			err := cmd.callback(cfg)
 			if err != nil {
 				fmt.Println(err)
 			}
