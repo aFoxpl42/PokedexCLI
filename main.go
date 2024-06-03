@@ -3,18 +3,14 @@ package main
 import (
 	"time"
 
-	pokeapi "github.com/aFoxpl42/PokedexCLI/internal/pokeAPI"
+	"github.com/aFoxpl42/PokedexCLI/internal/pokeAPI"
 )
 
-type config struct {
-	pokeapiClient pokeapi.Client
-	nextLocationAreaURL *string
-	prevLocationAreaURL *string
-}
-
 func main() {
-	cfg := config{
-		pokeapiClient: pokeapi.NewClient(time.Hour),
+	pokeClient := pokeapi.NewClient(5*time.Second, time.Minute*5)
+	cfg := &config{
+		pokeapiClient: pokeClient,
 	}
-	startREPL(&cfg)
+
+	startRepl(cfg)
 }

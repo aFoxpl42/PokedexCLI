@@ -5,52 +5,36 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/aFoxpl42/PokedexCLI/internal/pokeAPI"
 )
 
-type cliCommand struct {
-	name string
-	description string
-	callback func(*config) error
+type config struct {
+	pokeapiClient    pokeapi.Client
+	nextLocationsURL *string
+	prevLocationsURL *string
 }
 
-func getCommands() map[string]cliCommand {
-	return map[string]cliCommand{
-		"help": {
-			name: "help",
-			description: "Display a help message",
-			callback: commandHelp,
-		},
-		"exit": {
-			name: "exit",
-			description: "Exit the Pokedex",
-			callback: commandExit,
-		},
-		"map": {
-			name: "map",
-			description: "Lists the next page of location areas",
-			callback: commandMap,
-		},
-		"mapb": {
-			name: "mapb",
-			description: "Lists the prevoius page of location areas",
-			callback: commandMapB,
-		},
-	}
-}
-
-func getInput(prompt string, r* bufio.Reader) (string, error) {
-	fmt.Print(prompt)
-	input, err := r.ReadString('\n')
-	return strings.TrimSpace(strings.ToLower(input)), err
-}
-
-func startREPL(cfg *config) {
-	reader := bufio.NewReader(os.Stdin)
+func startRepl(cfg *config) {
+	reader := bufio.NewScanner(os.Stdin)
 	for {
-		cmdName, _ := getInput("pokedex > ", reader)
-		cmd, exists := getCommands()[cmdName]
+		fmt.Print("Pokedex > ")
+		reader.Scan()
+
+		words := cleanInput(reader.Text())
+		if len(words) == 0 {
+			continue
+		}
+
+		commandName := words[0]
+		args := []string{}
+		if len(words) > 1 {
+			args = words[1:]
+		}
+
+		command, exists := getCommands()[commandName]
 		if exists {
-			err := cmd.callback(cfg)
+			err := command.callback(cfg, args...)
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -59,7 +43,47 @@ func startREPL(cfg *config) {
 			fmt.Println("Unknown command")
 			continue
 		}
-
 	}
-	
+}
+
+func cleanInput(text string) []string {
+	output := strings.ToLower(text)
+	words := strings.Fields(output)
+	return words
+}
+
+type cliCommand struct {
+	name        string
+	description string
+	callback    func(*config, ...string) error
+}
+
+func getCommands() map[string]cliCommand {
+	return map[string]cliCommand{
+		"help": {
+			name:        "help",
+			description: "Displays a help message",
+			callback:    commandHelp,
+		},
+		"explore": {
+			name:        "explore <location_name>",
+			description: "Explore a location",
+			callback:    commandExplore,
+		},
+		"map": {
+			name:        "map",
+			description: "Get the next page of locations",
+			callback:    commandMapf,
+		},
+		"mapb": {
+			name:        "mapb",
+			description: "Get the previous page of locations",
+			callback:    commandMapb,
+		},
+		"exit": {
+			name:        "exit",
+			description: "Exit the Pokedex",
+			callback:    commandExit,
+		},
+	}
 }
